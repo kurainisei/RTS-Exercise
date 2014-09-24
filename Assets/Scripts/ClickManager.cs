@@ -1,9 +1,15 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
+
+[System.Serializable]
+public class Units {
+	public List<Transform> activeList = new List<Transform>();
+}
 
 public class ClickManager : MonoBehaviour {
 	public Transform selectionCube;
-
+	public List<Transform> activeList = new List<Transform>();
 	private bool _startDragging;
 	private RaycastHit _hitInfo;
 	private bool _hit;
@@ -11,7 +17,6 @@ public class ClickManager : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-	
 	}
 	
 	// Update is called once per frame
@@ -21,15 +26,31 @@ public class ClickManager : MonoBehaviour {
 			_hit = Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out _hitInfo);
 			if (_hit) {
 				if (_hitInfo.collider.tag=="FriendlyUnit") {
-					_hitInfo.collider.GetComponent<OrderReceiver>().ToggleSelected();
-				}
+					OrderReceiver order = _hitInfo.collider.GetComponent<OrderReceiver>();
+					order.ToggleSelected();
+
+					if (order.IsActive==true) {
+						activeList.Add (_hitInfo.transform);
+					}
+					else {
+						activeList.Remove (_hitInfo.transform);
+					}
+				}//Friendly Unit check
 
 				if (_hitInfo.collider.tag=="Ground") {
 					_startDragPoint = _hitInfo.point;
 					selectionCube.gameObject.SetActive(true);
-				}
-			}
-		}
+
+					foreach (Transform unit in activeList)
+					{
+						Vector2 offset = Random.insideUnitCircle;
+						unit.GetComponent<OrderReceiver>().MoveToPosition(new Vector3(_hitInfo.point.x+offset.x, unit.position.y, _hitInfo.point.z+offset.y));
+					}
+				}//Ground Click Check
+
+			}//Hit Check
+
+		}//MouseButtonDown Check
 
 		if (Input.GetMouseButton(0)) {
 			_hitInfo = new RaycastHit();
@@ -45,7 +66,6 @@ public class ClickManager : MonoBehaviour {
 			selectionCube.gameObject.SetActive(false);
 		}
 
-	}
-
-
+	}//update
+	
 }
